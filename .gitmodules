@@ -1,9 +1,0 @@
-[submodule "tools/1049-pdf-extraktor-lbv"]
-	path = tools/1049-pdf-extraktor-lbv
-	url = https://github.com/convertedfox/1049---PDF-Extraktor-LBV.git
-[submodule "tools/1067-relelisten-extraktor"]
-	path = tools/1067-relelisten-extraktor
-	url = https://github.com/convertedfox/RELEListen-Extraktor.git
-[submodule "tools/1052-buchungsimporteur-sap-lbv"]
-	path = tools/1052-buchungsimporteur-sap-lbv
-	url = https://github.com/convertedfox/1052---Buchungsimporteur-SAP-LBV.git

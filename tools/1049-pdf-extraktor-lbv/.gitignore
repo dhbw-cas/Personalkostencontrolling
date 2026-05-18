@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+CLAUDE.md
+
+# Virtual environments
+.venv
+
+# Data
+.data
+.archiv
+test.pdf
+Demo.xlsx
+extracted_data.xlsx
+Vorlage_f._Import.xlsx
+
+# agents
+agents.md

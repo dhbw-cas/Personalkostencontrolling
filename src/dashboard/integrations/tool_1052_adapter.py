@@ -32,7 +32,7 @@ def compute_default_booking_dates(
         from buchungsimporteur.transform.processor import DataProcessor  # type: ignore
     except Exception as exc:
         raise ToolIntegrationError(
-            "1052-Submodul konnte nicht importiert werden."
+            "1052-Toolmodul konnte nicht importiert werden."
         ) from exc
 
     processor = DataProcessor(reference_date=reference_date)
@@ -48,7 +48,7 @@ def get_required_source_columns() -> list[str]:
         from buchungsimporteur.transform.processor import DataProcessor  # type: ignore
     except Exception as exc:
         raise ToolIntegrationError(
-            "1052-Submodul konnte nicht importiert werden."
+            "1052-Toolmodul konnte nicht importiert werden."
         ) from exc
 
     processor = DataProcessor()

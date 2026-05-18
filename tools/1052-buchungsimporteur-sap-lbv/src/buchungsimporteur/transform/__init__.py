@@ -1,0 +1,1 @@
+"""Transformationslogik für Excel-Daten."""

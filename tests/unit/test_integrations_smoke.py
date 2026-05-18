@@ -42,16 +42,16 @@ def test_register_tool_import_paths_for_1052_adds_src_and_root(
     assert str(tool_root) in sys.path
 
 
-def test_register_tool_import_paths_raises_for_missing_submodule(
+def test_register_tool_import_paths_raises_for_missing_tool_directory(
     tmp_path: Path,
 ) -> None:
     with pytest.raises(ToolIntegrationError):
         register_tool_import_paths(ToolKey.PDF_1049, workspace_root=tmp_path)
 
 
-def test_collect_tool_diagnostics_marks_missing_submodules(tmp_path: Path) -> None:
+def test_collect_tool_diagnostics_marks_missing_tools(tmp_path: Path) -> None:
     diagnostics = collect_tool_diagnostics(workspace_root=tmp_path)
 
     assert len(diagnostics) == 3
-    assert all(diagnostic.submodule_available is False for diagnostic in diagnostics)
+    assert all(diagnostic.tool_available is False for diagnostic in diagnostics)
     assert all(diagnostic.import_available is False for diagnostic in diagnostics)

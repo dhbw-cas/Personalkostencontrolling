@@ -63,7 +63,7 @@ with st.expander("Systemdiagnose", expanded=False):
     rows = [
         {
             "Tool": diagnostic.display_name,
-            "Submodul": "bereit" if diagnostic.submodule_available else "fehlt",
+            "Tool-Verzeichnis": "bereit" if diagnostic.tool_available else "fehlt",
             "Import": "ok" if diagnostic.import_available else "fehlerhaft",
             "Pfad": str(diagnostic.path),
             "Details": diagnostic.detail,

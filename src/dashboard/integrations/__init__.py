@@ -1,1 +1,1 @@
-"""Integrationsschicht zwischen Dashboard-UI und Tool-Submodulen."""
+"""Integrationsschicht zwischen Dashboard-UI und vendorten Tools."""

@@ -1,0 +1,1 @@
+"""Datenvalidierung und Fehlerbehandlung."""

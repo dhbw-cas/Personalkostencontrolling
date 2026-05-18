@@ -33,7 +33,7 @@ def extract_zip_payload(uploaded_zip: Any) -> PdfExtractionResult:
         from main import export_to_excel_bytes, process_all_pdfs  # type: ignore
     except Exception as exc:
         raise ToolIntegrationError(
-            "1049-Submodul konnte nicht importiert werden."
+            "1049-Toolmodul konnte nicht importiert werden."
         ) from exc
 
     payload = uploaded_zip.getvalue()

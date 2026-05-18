@@ -1,0 +1,41 @@
+name: Notify dashboard sync
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate dispatch token
+        env:
+          DASHBOARD_TOKEN: ${{ secrets.DASHBOARD_REPO_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "${DASHBOARD_TOKEN}" ]; then
+            echo "Secret DASHBOARD_REPO_DISPATCH_TOKEN fehlt."
+            exit 1
+          fi
+
+      - name: Send update event to dashboard repository
+        env:
+          DASHBOARD_TOKEN: ${{ secrets.DASHBOARD_REPO_DISPATCH_TOKEN }}
+          TARGET_REPO: convertedfox/1071_MultiRepo_Rele-Tools
+          TOOL_KEY: "1052"
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          payload="$(printf '{"event_type":"tool-updated","client_payload":{"tool_key":"%s","tool_sha":"%s","source_repo":"%s"}}' "${TOOL_KEY}" "${SOURCE_SHA}" "${SOURCE_REPO}")"
+
+          curl --fail-with-body -sS -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${DASHBOARD_TOKEN}" \
+            "https://api.github.com/repos/${TARGET_REPO}/dispatches" \
+            -d "${payload}"

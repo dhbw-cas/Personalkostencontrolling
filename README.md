@@ -1,16 +1,16 @@
 # 1071 MultiRepo RELE Tools
 
 Orchestrierungs-Repository fuer ein zentrales Streamlit-Dashboard.
-Die Fachlogik bleibt in den drei Einzelrepos und wird hier ueber Submodule eingebunden.
+Die Fachlogik der drei Werkzeuge liegt in diesem Repo unter `tools/` als vendorter Code.
 
 ## Zielbild
 
 - Ein gemeinsamer Einstiegspunkt fuer Anwender
 - Drei Tool-Seiten in einer App:
-  - 1049 PDF-Extraktor LBV
-  - 1067 RELElisten-Extraktor
-  - 1052 Buchungsimporteur SAP LBV
-- Hohe Wartbarkeit durch klare Trennung: UI/Orchestrierung hier, Business-Logik in den Tool-Repos
+- 1049 PDF-Extraktor LBV
+- 1067 RELElisten-Extraktor
+- 1052 Buchungsimporteur SAP LBV
+- Hohe Wartbarkeit durch klare Trennung: UI/Orchestrierung hier, Business-Logik in den Tool-Modulen
 
 ## Lokaler Start
 
@@ -30,50 +30,34 @@ tools/
 ```
 
 - `app_pages/`: Streamlit-Unterseiten je Tool
-- `src/dashboard/integrations/`: Adapter-Schicht zu den Tool-Submodulen
-- `tools/`: Submodule der Einzelanwendungen
+- `src/dashboard/integrations/`: Adapter-Schicht zu den Tool-Modulen
+- `tools/`: vendorte Tool-Repositories
 
-## Submodul-Runbook
+## Pflege der vendorten Tools
 
 ### Grundprinzip
 
-Dieses Repo (`1071`) nutzt Tool-Repositories als Git-Submodule.
-Jedes Submodul ist auf einen festen Commit fixiert.
+Die Verzeichnisse unter `tools/` sind normale Repo-Inhalte.
+Es gibt keine Git-Submodule und keine automatische Pointer-Synchronisierung.
 
 Das bedeutet:
 
-- Tool-Aenderungen sind nicht automatisch im Dashboard sichtbar.
-- Das Dashboard sieht neue Aenderungen erst, wenn der Submodul-Pointer in `1071` aktualisiert und committed wurde.
+- Tool-Aenderungen sind erst sichtbar, wenn sie in diesem Repo uebernommen und committed wurden.
 
-### Einmaliges Setup
+### Tool-Update Ablauf
 
 ```bash
-git clone --recurse-submodules <1071-repo-url>
+git clone <1071-repo-url>
 cd 1071_MultiRepo_Rele-Tools
-git submodule update --init --recursive
 uv sync
 ```
 
-### Tool weiterentwickeln und in 1071 uebernehmen
+1. Im jeweiligen Tool-Repo entwickeln, testen und committen.
+2. Geaenderte Dateien in das passende Verzeichnis unter `tools/` uebernehmen.
+3. Im Dashboard-Repo Qualitaetschecks laufen lassen und alles gemeinsam committen.
 
-1. Im Tool-Repo entwickeln, testen, committen.
-2. In `1071` den Submodulstand auf den gewuenschten Commit aktualisieren.
-3. In `1071` den geaenderten Submodul-Pointer committen.
-
-Beispiel:
-
-```bash
-git -C "tools/<submodule-pfad>" fetch origin
-git -C "tools/<submodule-pfad>" checkout <commit-oder-tag>
-git add "tools/<submodule-pfad>"
-git commit -m "Update <tool-name> submodule to <commit/tag>"
-```
-
-### Nach Pull auf neuem Rechner
-
-```bash
-git submodule update --init --recursive
-```
+Empfehlung: Tool-Updates immer zusammen mit einer kurzen Notiz dokumentieren,
+welcher Upstream-Stand uebernommen wurde.
 
 ## Qualitaetschecks
 
@@ -83,35 +67,3 @@ uv run ruff format .
 uv run mypy .
 uv run pytest
 ```
-
-## Automatische Vererbung aus Tool-Repos
-
-Für die automatische Übernahme von Tool-Änderungen ist folgender Ablauf eingerichtet:
-
-1. Ein Push auf `master` in einem Tool-Repo (`1049`, `1067`, `1052`) sendet ein `repository_dispatch`-Event an `1071`.
-2. `1071` aktualisiert den passenden Submodul-Pointer auf den gemeldeten Commit.
-3. `1071` erstellt automatisch eine PR für manuelles Review und Merge.
-
-### Voraussetzungen
-
-- In **jedem Tool-Repo** muss ein Secret gesetzt sein:
-  - `DASHBOARD_REPO_DISPATCH_TOKEN`
-- Das Token braucht mindestens folgende Rechte:
-  - Zugriff auf `convertedfox/1071_MultiRepo_Rele-Tools`
-  - `contents:write`
-  - `pull_requests:write` (empfohlen)
-- Im `1071`-Repo muss für GitHub Actions gesetzt sein:
-  - `Workflow permissions: Read and write`
-  - `Allow GitHub Actions to create and approve pull requests`
-- Branch-Protection für `master` darf manuelle Reviews zulassen.
-
-Optional:
-
-- `DASHBOARD_AUTOMATION_TOKEN` im `1071`-Repo (nur nötig, wenn ein Tool-Submodul privat ist).
-
-### Workflows
-
-- `1071`: `.github/workflows/sync-tool-submodule.yml`
-- `1049`: `.github/workflows/notify-dashboard.yml`
-- `1067`: `.github/workflows/notify-dashboard.yml`
-- `1052`: `.github/workflows/notify-dashboard.yml`

@@ -1,0 +1,26 @@
+[project]
+name = "1067-relelisten-extraktor"
+version = "0.1.0"
+description = "Extrahiert RELE-Abrechnungsdaten aus textbasierten PDF-Dateien"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.2",
+    "pypdf>=6.10.0",
+    "streamlit>=1.56.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.20.1",
+    "pytest>=9.0.3",
+    "ruff>=0.15.10",
+]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

@@ -36,7 +36,7 @@ def extract_rele_documents(uploaded_files: list[Any]) -> ReleExtractionResult:
         from relelisten_extraktor.export import rows_to_dataframe  # type: ignore
     except Exception as exc:
         raise ToolIntegrationError(
-            "1067-Submodul konnte nicht importiert werden."
+            "1067-Toolmodul konnte nicht importiert werden."
         ) from exc
 
     try:
