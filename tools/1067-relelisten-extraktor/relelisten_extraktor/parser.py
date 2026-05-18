@@ -27,14 +27,12 @@ _MONAT_VERGUETUNG_PATTERN = re.compile(
 )
 _PERSONALNUMMER_PREFIX_PATTERN = re.compile(r"\b(\d{8}/[0-9A-Z]{3,4})\b")
 
-_BESOLDUNG_ROW_PATTERN = re.compile(
-    r"(?m)^\s*(\d{8}/[0-9A-Z]{3,4})\s+"
+_BESOLDUNG_ROW_PREFIX_PATTERN = re.compile(
+    r"^\s*(\d{8}/[0-9A-Z]{3,4})\s+"
     r"([A-ZÄÖÜa-zäöüß0-9 .\-/]+?)\s+"
-    r"(\d{2}\.\d{2}\.\d{2})\s+"
-    r"(-?\d[\d.,]*)\s+"
-    r"(-?\d[\d.,]*)"
-    r"(?:\s+(-?\d[\d.,]*)\s+(-?\d[\d.,]*))?\s*$"
+    r"(\d{2}\.\d{2}\.\d{2})\s*(.*)$"
 )
+_BETRAG_PATTERN = re.compile(r"-?\d[\d.,]*")
 
 _VERGUETUNG_ROW_PATTERN = re.compile(
     r"\*(\d{8}/[0-9A-Z]{3,4})\*([^*]+)\*"
@@ -126,17 +124,22 @@ def _parse_besoldung_rows(
     page_number: int,
 ) -> list[PayrollRow]:
     rows: list[PayrollRow] = []
-    for match in _BESOLDUNG_ROW_PATTERN.finditer(text):
-        (
-            personalnummer,
-            name,
-            geburtsdatum,
-            brutto,
-            summe_monat,
-            jahr_brutto,
-            summe_jahr,
-        ) = match.groups()
+    for line in text.splitlines():
+        match = _BESOLDUNG_ROW_PREFIX_PATTERN.match(line)
+        if match is None:
+            continue
+
+        personalnummer, name, geburtsdatum, betraege_raw = match.groups()
         if not _PERSONALNUMMER_PREFIX_PATTERN.match(personalnummer):
+            continue
+
+        betraege = _BETRAG_PATTERN.findall(betraege_raw)
+        if len(betraege) == 4:
+            brutto, summe_monat, jahr_brutto, summe_jahr = betraege
+        elif len(betraege) == 2:
+            brutto, summe_monat = None, None
+            jahr_brutto, summe_jahr = betraege
+        else:
             continue
 
         rows.append(
