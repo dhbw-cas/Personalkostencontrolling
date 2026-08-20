@@ -1,7 +1,7 @@
 # 1071 MultiRepo RELE Tools
 
 Orchestrierungs-Repository fuer ein zentrales Streamlit-Dashboard.
-Die Fachlogik der drei Werkzeuge liegt in diesem Repo unter `tools/` als vendorter Code.
+Die Fachlogik der drei Werkzeuge liegt in diesem Repo unter `tools/` als Code.
 
 ## Zielbild
 
