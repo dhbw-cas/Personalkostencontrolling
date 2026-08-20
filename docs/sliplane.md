@@ -98,7 +98,8 @@ den offiziellen Sliplane Basic-Auth-Proxy:
 
 1. `sliplane/basic-auth-proxy` auf GitHub forken.
 2. Den Fork als dritten Service auf demselben Sliplane-Server deployen. Für
-   dieses Projekt wird `convertedfox/basic-auth-proxy` verwendet.
+   dieses Projekt wird `convertedfox/basic-auth-proxy` mit der Branch
+   `sliplane-port-80` verwendet.
 3. Nur den Proxy als öffentlichen HTTP-Service exponieren.
 4. Den Proxy-Healthcheck auf `/health` setzen.
 5. Kein Volume hinzufügen.
@@ -108,7 +109,6 @@ den offiziellen Sliplane Basic-Auth-Proxy:
 HTTP_BASIC_AUTH_USER=<Benutzername>
 HTTP_BASIC_AUTH_PASSWORD=<starkes Passwort>
 PRIVATE_WEBSITE_URL=<vollständige interne URL inklusive Protokoll und Port>
-PORT=80
 ```
 
 Die Zugangsdaten dürfen nicht in diesem Repository gespeichert werden.
