@@ -96,11 +96,13 @@ Anwendungsversion.
 Die Streamlit-App bleibt privat. Der öffentliche Zugang erfolgt vorläufig über
 den offiziellen Sliplane Basic-Auth-Proxy:
 
-1. `sliplane/basic-auth-proxy` auf GitHub forken.
-2. Den Fork als dritten Service auf demselben Sliplane-Server deployen.
-3. Nur den Proxy öffentlich exponieren.
+1. Einen Registry-Service mit dem offiziellen Image
+   `ghcr.io/sliplane/basic-auth-proxy:main` anlegen.
+2. Den Proxy als dritten Service auf demselben Sliplane-Server deployen.
+3. Nur den Proxy als öffentlichen HTTP-Service auf Port 8080 exponieren.
 4. Den Proxy-Healthcheck auf `/health` setzen.
-5. Die folgenden Werte als Secrets beziehungsweise Umgebungsvariablen setzen.
+5. Kein Volume hinzufügen.
+6. Die folgenden Werte als Secrets beziehungsweise Umgebungsvariablen setzen.
 
 ```text
 HTTP_BASIC_AUTH_USER=<Benutzername>
