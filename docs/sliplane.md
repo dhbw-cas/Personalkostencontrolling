@@ -1,33 +1,66 @@
 # Sliplane-Deployment
 
-Der erste Slice verwendet eine disposable Entwicklungsdatenbank und
-ausschließlich synthetische Daten.
+Der erste Slice verwendet ausschließlich synthetische Daten. PostgreSQL läuft
+als privater Service auf demselben Sliplane-Server wie die Anwendung. Für diesen
+disposable Entwicklungsstand entstehen dadurch keine zusätzlichen Kosten für
+eine Managed Database.
 
 ## 1. Projekt und Server
 
-1. In Sliplane ein Projekt für das Personalkostencontrolling anlegen.
-2. Einen Server in der gewünschten Region erstellen.
-3. Die PostgreSQL-Datenbank in derselben Region anlegen.
+1. In Sliplane das Projekt `Personalkostencontrolling` anlegen.
+2. Einen Server namens `personalkosten-dev` in Deutschland erstellen.
+3. PostgreSQL, Streamlit und den Basic-Auth-Proxy auf diesem Server betreiben.
 
-## 2. PostgreSQL
+Die Ressourcenmetriken des Servers müssen beobachtet werden. PDF-Verarbeitung,
+Streamlit und PostgreSQL teilen sich CPU und Arbeitsspeicher.
 
-In Sliplane unter **Databases** eine Datenbank erstellen und nach dem
-Provisioning ihre Connection URI verwenden.
+## 2. Privater PostgreSQL-Service
 
-Anforderungen:
+Im Projekt einen weiteren Service anlegen:
 
-- TLS bleibt mit `sslmode=verify-full` aktiviert.
-- `sslrootcert=system` bleibt in der URI erhalten.
-- Die URI wird niemals committed oder in Logs ausgegeben.
-- Die Access-Control-Liste erlaubt nur die Entwickler-IP und die öffentliche
-  Ausgangs-IP des Sliplane-Servers.
-- `0.0.0.0/0` und `::/0` werden nicht dauerhaft freigeschaltet.
+| Einstellung | Wert |
+| --- | --- |
+| Deploy Source | vorkonfiguriertes PostgreSQL oder Registry |
+| Image bei Registry | `docker.io/library/postgres:17` |
+| Service Name | `personalkosten-postgres` |
+| Expose Service | aus |
+| Volume | `/var/lib/postgresql/data` |
 
-Die von Sliplane gelieferte `postgres://`-URI kann unverändert als
-`DATABASE_URL` gesetzt werden. Die Anwendung normalisiert das Schema intern zu
-`postgresql+psycopg://`.
+Umgebungsvariablen des PostgreSQL-Service:
 
-## 3. Private Streamlit-App
+```text
+POSTGRES_DB=personalkosten_dev
+POSTGRES_USER=personalkosten
+POSTGRES_PASSWORD=<starkes zufälliges Passwort>
+```
+
+`POSTGRES_PASSWORD` wird in Sliplane als Secret markiert. Der Service darf nicht
+öffentlich exponiert werden. Das Volume ist für den Containerbetrieb notwendig,
+ersetzt aber kein Backup.
+
+Für Slice 1 ist Datenverlust akzeptiert, weil ausschließlich synthetische Daten
+verwendet werden. Vor einer Freigabe für echte Daten ist auf Sliplane Managed
+PostgreSQL mit Point-in-Time-Recovery zu wechseln oder ein geprüftes separates
+Backup- und Restore-Konzept umzusetzen.
+
+## 3. Interne Datenbankverbindung
+
+Nach dem Start zeigt Sliplane in den Service-Einstellungen den internen Hostnamen
+des PostgreSQL-Service an. Dieser Hostname wird in der privaten Streamlit-App
+verwendet, niemals `localhost` und niemals eine öffentliche IP.
+
+`DATABASE_URL` der Streamlit-App:
+
+```text
+postgresql+psycopg://personalkosten:<URL-kodiertes Passwort>@<interner Host>:5432/personalkosten_dev
+```
+
+Die vollständige URI wird als Sliplane Secret gespeichert und weder committed
+noch in Logs ausgegeben. Sonderzeichen im Passwort müssen URL-kodiert sein.
+Innerhalb des privaten Sliplane-Netzes ist kein öffentlicher Datenbankport und
+keine externe TLS-Verbindung erforderlich.
+
+## 4. Private Streamlit-App
 
 Die Anwendung wird aus
 `dhbw-cas/Personalkostencontrolling`, Branch `main`, deployt.
@@ -41,7 +74,7 @@ Service-Einstellungen:
 | Expose Service | aus |
 | Healthcheck | `/_stcore/health` |
 | CMD Override | leer |
-| `DATABASE_URL` | Sliplane Connection URI, als Secret |
+| `DATABASE_URL` | interne PostgreSQL-URI, als Secret |
 
 `railpack.json` führt vor jedem App-Start `alembic upgrade head` aus und startet
 Streamlit anschließend auf `0.0.0.0:$PORT`.
@@ -53,16 +86,16 @@ alembic upgrade head
 python -m streamlit run streamlit_app.py ...
 ```
 
-Ein fehlgeschlagenes Alembic-Upgrade verhindert damit den Start der neuen
+Ein fehlgeschlagenes Alembic-Upgrade verhindert den Start der neuen
 Anwendungsversion.
 
-## 4. Oeffentlicher Basic-Auth-Proxy
+## 5. Oeffentlicher Basic-Auth-Proxy
 
 Die Streamlit-App bleibt privat. Der öffentliche Zugang erfolgt vorläufig über
 den offiziellen Sliplane Basic-Auth-Proxy:
 
 1. `sliplane/basic-auth-proxy` auf GitHub forken.
-2. Den Fork als zweiten Service auf demselben Sliplane-Server deployen.
+2. Den Fork als dritten Service auf demselben Sliplane-Server deployen.
 3. Nur den Proxy öffentlich exponieren.
 4. Den Proxy-Healthcheck auf `/health` setzen.
 5. Die folgenden Werte als Secrets beziehungsweise Umgebungsvariablen setzen.
@@ -75,10 +108,13 @@ PRIVATE_WEBSITE_URL=<vollständige interne URL inklusive Protokoll und Port>
 
 Die Zugangsdaten dürfen nicht in diesem Repository gespeichert werden.
 
-## 5. Abnahme
+## 6. Abnahme
 
 Nach dem Deployment werden geprüft:
 
+- PostgreSQL ist ausschließlich intern erreichbar.
+- Das Volume ist unter `/var/lib/postgresql/data` eingebunden.
+- Alembic legt die drei Tabellen des ersten Slices an.
 - App-Healthcheck `/_stcore/health` ist grün.
 - Proxy-Healthcheck `/health` ist grün.
 - Zugriff ohne Basic Auth wird abgewiesen.
@@ -89,6 +125,6 @@ Nach dem Deployment werden geprüft:
 - In den Logs erscheinen keine Uploadinhalte, DataFrames oder Zugangsdaten.
 
 Die Anwendung ist damit technisch erreichbar, aber noch nicht für echte
-personenbezogene Daten freigegeben. Dafür folgen insbesondere
-Anwendungs-Authentifizierung, Rollen, Aufbewahrungsregeln und eine fachliche
-Datenschutzabnahme.
+personenbezogene Daten freigegeben. Dafür folgen insbesondere Managed
+PostgreSQL oder ein belastbares Backupkonzept, Anwendungs-Authentifizierung,
+Rollen, Aufbewahrungsregeln und eine fachliche Datenschutzabnahme.

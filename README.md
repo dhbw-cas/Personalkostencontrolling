@@ -67,6 +67,11 @@ App-Start aus und bindet Streamlit an den von Sliplane gesetzten Port.
 Die vollständige Einrichtung von PostgreSQL, privater App und öffentlichem
 Basic-Auth-Proxy ist in [`docs/sliplane.md`](docs/sliplane.md) beschrieben.
 
+Slice 1 nutzt einen privaten PostgreSQL-Service auf demselben Sliplane-Server.
+Diese kostengünstige Variante ist nur für synthetische Entwicklungsdaten
+vorgesehen; vor Produktivdaten folgt Managed PostgreSQL oder ein geprüftes
+Backup- und Restore-Konzept.
+
 Keine echten Zugangsdaten in `.env`, `.streamlit/secrets.toml`, Quellcode oder
 Logs speichern.
 
