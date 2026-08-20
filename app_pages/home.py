@@ -19,7 +19,7 @@ render_hero(
 )
 
 st.subheader("Toolübersicht")
-left, middle, right = st.columns(3, vertical_alignment="top")
+left, middle, right, inventory = st.columns(4, vertical_alignment="top")
 with left:
     with st.container(border=True, height=TOOL_BOX_HEIGHT):
         st.markdown("**PDF-Extraktor**")
@@ -49,6 +49,15 @@ with right:
         st.page_link(
             "app_pages/tool_1052_buchungsimporteur.py",
             label="Tool öffnen",
+            use_container_width=True,
+        )
+with inventory:
+    with st.container(border=True, height=TOOL_BOX_HEIGHT):
+        st.markdown("**Datenbestand**")
+        st.caption("Zeigt gespeicherte Imports und ihre technischen Quelldaten.")
+        st.page_link(
+            "app_pages/data_browser.py",
+            label="Datenbestand öffnen",
             use_container_width=True,
         )
 

@@ -1,0 +1,14 @@
+.git
+.venv
+.env
+.streamlit/secrets.toml
+.data
+development
+opendesign
+__pycache__
+*.py[cod]
+.mypy_cache
+.pytest_cache
+.ruff_cache
+build
+dist

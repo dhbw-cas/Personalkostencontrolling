@@ -8,3 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Local configuration and planning
+.env
+.streamlit/secrets.toml
+development/

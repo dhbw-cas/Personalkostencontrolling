@@ -36,13 +36,14 @@ page = st.navigation(
             "app_pages/tool_1052_buchungsimporteur.py",
             title="1052 Buchungsimporteur",
         ),
+        st.Page("app_pages/data_browser.py", title="Datenbestand"),
     ],
     position="top",
 )
 
 st.title(page.title)
 st.caption(
-    "Zentrale Oberfläche für die LBV-Werkzeuge. "
+    "Zentrale Oberfläche für die LBV-Werkzeuge und gespeicherte Imports. "
     "Wählen Sie das passende Tool für Ihren Anwendungsfall."
 )
 

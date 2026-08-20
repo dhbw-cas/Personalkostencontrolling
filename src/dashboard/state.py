@@ -5,6 +5,9 @@ from typing import Any
 KEY_1049_DATAFRAME = "tool_1049_dataframe"
 KEY_1049_EXPORT_BYTES = "tool_1049_export_bytes"
 KEY_1049_EXPORT_NAME = "tool_1049_export_name"
+KEY_1049_FILE_METADATA = "tool_1049_file_metadata"
+KEY_1049_IMPORT_ID = "tool_1049_import_id"
+KEY_1049_UPLOAD_SIGNATURE = "tool_1049_upload_signature"
 
 KEY_1067_DATAFRAME = "tool_1067_dataframe"
 KEY_1067_CSV_BYTES = "tool_1067_csv_bytes"
@@ -25,6 +28,9 @@ _DEFAULTS: dict[str, Any] = {
     KEY_1049_DATAFRAME: None,
     KEY_1049_EXPORT_BYTES: None,
     KEY_1049_EXPORT_NAME: None,
+    KEY_1049_FILE_METADATA: None,
+    KEY_1049_IMPORT_ID: None,
+    KEY_1049_UPLOAD_SIGNATURE: None,
     KEY_1067_DATAFRAME: None,
     KEY_1067_CSV_BYTES: None,
     KEY_1067_XLSX_BYTES: None,
@@ -44,3 +50,15 @@ _DEFAULTS: dict[str, Any] = {
 def init_state(store: Any) -> None:
     for key, default_value in _DEFAULTS.items():
         store.setdefault(key, default_value)
+
+
+def clear_1049_result(store: Any) -> None:
+    for key in (
+        KEY_1049_DATAFRAME,
+        KEY_1049_EXPORT_BYTES,
+        KEY_1049_EXPORT_NAME,
+        KEY_1049_FILE_METADATA,
+        KEY_1049_IMPORT_ID,
+        KEY_1049_UPLOAD_SIGNATURE,
+    ):
+        store[key] = None

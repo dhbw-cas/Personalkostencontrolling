@@ -1,69 +1,83 @@
-# 1071 MultiRepo RELE Tools
+# Personalkostencontrolling
 
-Orchestrierungs-Repository fuer ein zentrales Streamlit-Dashboard.
-Die Fachlogik der drei Werkzeuge liegt in diesem Repo unter `tools/` als Code.
+Streamlit-Prozesszentrale für die RELE-Toolkette. Die Anwendung bündelt die
+vendorten Werkzeuge 1049, 1052 und 1067 und baut schrittweise eine
+nachvollziehbare PostgreSQL-Datenbasis auf.
 
-## Zielbild
+Der aktuelle Slice persistiert ausschließlich Ergebnisse des
+1049-LBV-PDF-Extraktors. 1067, 1052 und der fachliche Abgleich folgen in
+späteren Ausbaustufen.
 
-- Ein gemeinsamer Einstiegspunkt fuer Anwender
-- Drei Tool-Seiten in einer App:
-- 1049 PDF-Extraktor LBV
-- 1067 RELElisten-Extraktor
-- 1052 Buchungsimporteur SAP LBV
-- Hohe Wartbarkeit durch klare Trennung: UI/Orchestrierung hier, Business-Logik in den Tool-Modulen
+## Lokale Entwicklung
 
-## Lokaler Start
+Voraussetzungen:
+
+- Python 3.12
+- `uv`
+- erreichbare PostgreSQL-Datenbank für Migration und Speichertests
+
+Installation und Start:
 
 ```bash
-uv sync
+uv sync --locked
+export DATABASE_URL="postgres://...?...sslmode=verify-full&sslrootcert=system"
+uv run alembic upgrade head
 uv run streamlit run streamlit_app.py
 ```
 
-## Struktur
+Ohne `DATABASE_URL` bleiben Extraktion, Vorschau und Download nutzbar. Speichern
+und Datenbestand zeigen dann einen Konfigurationshinweis.
+
+## Architektur
 
 ```text
 streamlit_app.py
-app_pages/
-src/dashboard/
-src/dashboard/integrations/
-tools/
+app_pages/                 Streamlit-Seiten
+src/dashboard/integrations Adapter zu den vendorten Tools
+src/dashboard/imports/     Datenvertraege, Mapper und Import-Service
+src/dashboard/db/          SQLAlchemy-Modelle und Repositories
+alembic/                   versionierte PostgreSQL-Migrationen
+tools/                     vendorte Fachlogik
+tests/                     Root-Tests
 ```
 
-- `app_pages/`: Streamlit-Unterseiten je Tool
-- `src/dashboard/integrations/`: Adapter-Schicht zu den Tool-Modulen
-- `tools/`: vendorte Tool-Repositories
+Streamlit-Seiten schreiben kein SQL. Import-Service und Repository teilen sich
+eine Transaktion, sodass ein Fehler keine Teilbestände hinterlässt.
 
-## Pflege der vendorten Tools
+## 1049-Persistenzpfad
 
-### Grundprinzip
-
-Die Verzeichnisse unter `tools/` sind normale Repo-Inhalte.
-Es gibt keine Git-Submodule und keine automatische Pointer-Synchronisierung.
-
-Das bedeutet:
-
-- Tool-Aenderungen sind erst sichtbar, wenn sie in diesem Repo uebernommen und committed wurden.
-
-### Tool-Update Ablauf
-
-```bash
-git clone <1071-repo-url>
-cd 1071_MultiRepo_Rele-Tools
-uv sync
+```text
+ZIP-Upload
+-> sichere PDF-Extraktion
+-> DataFrame-Vorschau
+-> expliziter Speicherbutton
+-> import_runs + import_files + lbv_1049_rows
+-> Datenbestand
 ```
 
-1. Im jeweiligen Tool-Repo entwickeln, testen und committen.
-2. Geaenderte Dateien in das passende Verzeichnis unter `tools/` uebernehmen.
-3. Im Dashboard-Repo Qualitaetschecks laufen lassen und alles gemeinsam committen.
+Originaldateien werden nicht dauerhaft gespeichert. Die Anwendung persistiert
+nur Uploadmetadaten, SHA256 und strukturierte Positionen. Details stehen in
+[`docs/data-contracts.md`](docs/data-contracts.md).
 
-Empfehlung: Tool-Updates immer zusammen mit einer kurzen Notiz dokumentieren,
-welcher Upstream-Stand uebernommen wurde.
+## Sliplane
+
+Das Repository enthält eine `railpack.json`. Sie führt Migrationen vor dem
+App-Start aus und bindet Streamlit an den von Sliplane gesetzten Port.
+
+Die vollständige Einrichtung von PostgreSQL, privater App und öffentlichem
+Basic-Auth-Proxy ist in [`docs/sliplane.md`](docs/sliplane.md) beschrieben.
+
+Keine echten Zugangsdaten in `.env`, `.streamlit/secrets.toml`, Quellcode oder
+Logs speichern.
 
 ## Qualitaetschecks
 
 ```bash
+uv run ruff format --check .
 uv run ruff check .
-uv run ruff format .
 uv run mypy .
 uv run pytest
 ```
+
+Die Tests der vendorten Werkzeuge werden zusätzlich explizit ausgeführt, da
+`tools/` bewusst nicht durch die Root-Konfiguration gesammelt wird.

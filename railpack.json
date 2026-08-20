@@ -1,0 +1,6 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "deploy": {
+    "startCommand": "python -m alembic upgrade head && python -m streamlit run streamlit_app.py --server.address=0.0.0.0 --server.port=${PORT:-8501} --server.headless=true"
+  }
+}

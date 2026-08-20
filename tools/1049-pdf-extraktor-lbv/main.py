@@ -10,6 +10,15 @@ EXPORT_PATH = ".data/export"  # Ordner, wohin die fertigen Exporte gespeichert w
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # timestamp für Dateinamen
 filename = f"PDF_Extract_{timestamp}.xlsx"
 
+
+class PdfProcessingError(RuntimeError):
+    """Eine PDF konnte im strikten Dashboard-Pfad nicht verarbeitet werden."""
+
+
+def _log(message, *, verbose=True):
+    if verbose:
+        print(message)
+
 # Katalog der Standorte mit präzisen Adressen
 STANDORTE = {
     "Florianstr. 15": "Horb am Neckar",
@@ -48,7 +57,7 @@ def _extract_periods_from_filename(filename: str):
         return None, None
 
 
-def extract_data(pdf_path):
+def extract_data(pdf_path, *, strict=False, verbose=True):
     """
     Öffnet deine einzelne PDF, extrahiert das Datum des Anschreibens und die Tabelleneinträge,
     und gibt ein pandas DataFrame mit den Spalten Position, Datum des Anschreibens, Betrag zurück.
@@ -59,16 +68,22 @@ def extract_data(pdf_path):
             text = ""
             for page in pdf.pages:
                 text += page.extract_text() + "\n"
-            print(f"\n=== Verarbeite: {os.path.basename(pdf_path)} ===")
+            _log(
+                f"\n=== Verarbeite: {os.path.basename(pdf_path)} ===",
+                verbose=verbose,
+            )
 
         # Datum des Anschreibens extrahieren (z.B. '05.09.2024')
         date_match = re.search(r"\b(\d{2}\.\d{2}\.\d{4})\b", text)
         if not date_match:
-            print(f"Warnung: Datum des Anschreibens nicht gefunden in {pdf_path}")
+            _log(
+                f"Warnung: Datum des Anschreibens nicht gefunden in {pdf_path}",
+                verbose=verbose,
+            )
             letter_date = None
         else:
             letter_date = date_match.group(1)
-            print(f"Datum gefunden: {letter_date}")
+            _log(f"Datum gefunden: {letter_date}", verbose=verbose)
 
         # VERBESSERTE Tabelleneinträge-Extraktion
         # Wichtig: Nur Beträge mit LEERZEICHEN vor dem € sind Tabellenwerte!
@@ -96,7 +111,9 @@ def extract_data(pdf_path):
                 amount = float(amount_str.replace(".", "").replace(",", "."))
 
                 rows.append({"Position": position, "Betrag (€)": amount})
-                print(f"  ✓ Gefunden: {position} | {amount_str} €")
+                _log(
+                    f"  ✓ Gefunden: {position} | {amount_str} €", verbose=verbose
+                )
 
         # Standort aus dem Katalog finden
         standort = None
@@ -116,7 +133,10 @@ def extract_data(pdf_path):
                     standort = ort
                     break
 
-        print(f"Standort: {standort if standort else 'Nicht gefunden'}")
+        _log(
+            f"Standort: {standort if standort else 'Nicht gefunden'}",
+            verbose=verbose,
+        )
 
         # Verwendungszweck finden
         pattern_verwendungszweck = (
@@ -131,8 +151,9 @@ def extract_data(pdf_path):
         source_filename = os.path.basename(pdf_path)
         month_a, month_b = _extract_periods_from_filename(source_filename)
         if month_a is None or month_b is None:
-            print(
-                f"Warnung: Keine A/B-Periode im Dateinamen erkannt: {source_filename}"
+            _log(
+                f"Warnung: Keine A/B-Periode im Dateinamen erkannt: {source_filename}",
+                verbose=verbose,
             )
 
         for row in rows:
@@ -155,16 +176,25 @@ def extract_data(pdf_path):
             row["Verwendungszweck"] = verwendungszweck
             row["Buchungsperiode"] = buchungsperiode
 
-        print(f"\nGefundene Positionen: {len(rows)}")
+        _log(f"\nGefundene Positionen: {len(rows)}", verbose=verbose)
 
         return rows
 
     except Exception as e:
-        print(f"Fehler bei der Verarbeitung von {pdf_path}: {str(e)}")
+        _log(
+            f"Fehler bei der Verarbeitung von {pdf_path}: {str(e)}",
+            verbose=verbose,
+        )
+        if strict:
+            raise PdfProcessingError(
+                f"PDF konnte nicht verarbeitet werden: {os.path.basename(pdf_path)}"
+            ) from e
         return []
 
 
-def process_all_pdfs(FOLDER_PATH, progress_callback=None):
+def process_all_pdfs(
+    FOLDER_PATH, progress_callback=None, *, strict=False, verbose=True
+):
     """
     Verarbeitet alle PDFs in einem Ordner und gibt ein kombiniertes DataFrame zurück.
     """
@@ -178,7 +208,10 @@ def process_all_pdfs(FOLDER_PATH, progress_callback=None):
                 pdf_files.append(os.path.join(root, file))
 
     if not pdf_files:
-        print(f"Keine PDF-Dateien im Ordner {FOLDER_PATH} gefunden.")
+        _log(
+            f"Keine PDF-Dateien im Ordner {FOLDER_PATH} gefunden.",
+            verbose=verbose,
+        )
         return pd.DataFrame()
 
     # Jede PDF-Datei verarbeiten
@@ -186,7 +219,12 @@ def process_all_pdfs(FOLDER_PATH, progress_callback=None):
     for index, pdf_path in enumerate(pdf_files, start=1):
         if progress_callback:
             progress_callback(index, total_files, pdf_path)
-        rows = extract_data(pdf_path)
+        rows = extract_data(pdf_path, strict=strict, verbose=verbose)
+        if strict and not rows:
+            raise PdfProcessingError(
+                "Keine auswertbaren Positionen gefunden in "
+                f"{os.path.basename(pdf_path)}"
+            )
         all_rows.extend(rows)
 
     # Kombiniertes DataFrame erstellen
@@ -196,7 +234,7 @@ def process_all_pdfs(FOLDER_PATH, progress_callback=None):
         df = df.sort_values(["Quelldatei", "Position"])
         return df
     else:
-        print("Keine Daten gefunden.")
+        _log("Keine Daten gefunden.", verbose=verbose)
         return pd.DataFrame()
 
 

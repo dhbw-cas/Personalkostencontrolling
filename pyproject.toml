@@ -1,15 +1,18 @@
 [project]
-name = "1071-multirepo-rele-tools"
+name = "personalkostencontrolling"
 version = "0.1.0"
-description = "Streamlit dashboard fuer die RELE Toolkette"
+description = "RELE Prozesszentrale fuer das Personalkostencontrolling"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.16,<2",
     "openpyxl>=3.1.5",
     "pandas>=2.2.3",
     "pdfplumber>=0.11.6",
+    "psycopg[binary]>=3.2,<4",
     "pydantic>=2.11.0",
     "pypdf>=6.10.0",
+    "sqlalchemy>=2.0,<3",
     "streamlit>=1.56.0",
 ]
 
