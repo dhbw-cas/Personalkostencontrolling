@@ -21,10 +21,10 @@ Im Projekt einen weiteren Service anlegen:
 | Einstellung | Wert |
 | --- | --- |
 | Deploy Source | vorkonfiguriertes PostgreSQL oder Registry |
-| Image bei Registry | `docker.io/library/postgres:17` |
+| Image bei Registry | `docker.io/library/postgres:18.6` |
 | Service Name | `personalkosten-postgres` |
 | Expose Service | aus |
-| Volume | `/var/lib/postgresql/data` |
+| Volume | `/var/lib/postgresql` |
 
 Umgebungsvariablen des PostgreSQL-Service:
 
@@ -35,8 +35,10 @@ POSTGRES_PASSWORD=<starkes zufälliges Passwort>
 ```
 
 `POSTGRES_PASSWORD` wird in Sliplane als Secret markiert. Der Service darf nicht
-öffentlich exponiert werden. Das Volume ist für den Containerbetrieb notwendig,
-ersetzt aber kein Backup.
+öffentlich exponiert werden. PostgreSQL 18 verwendet standardmäßig das
+versionsspezifische `PGDATA` `/var/lib/postgresql/18/docker`; deshalb wird das
+übergeordnete Verzeichnis `/var/lib/postgresql` eingebunden. Das Volume ersetzt
+kein Backup.
 
 Für Slice 1 ist Datenverlust akzeptiert, weil ausschließlich synthetische Daten
 verwendet werden. Vor einer Freigabe für echte Daten ist auf Sliplane Managed
@@ -113,7 +115,7 @@ Die Zugangsdaten dürfen nicht in diesem Repository gespeichert werden.
 Nach dem Deployment werden geprüft:
 
 - PostgreSQL ist ausschließlich intern erreichbar.
-- Das Volume ist unter `/var/lib/postgresql/data` eingebunden.
+- Das Volume ist unter `/var/lib/postgresql` eingebunden.
 - Alembic legt die drei Tabellen des ersten Slices an.
 - App-Healthcheck `/_stcore/health` ist grün.
 - Proxy-Healthcheck `/health` ist grün.
